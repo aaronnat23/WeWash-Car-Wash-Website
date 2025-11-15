@@ -103,5 +103,5 @@ For detailed technical specifications, feature lists, and implementation
 steps, please refer to aaron_claude.md in the project root.
 
 ================================================================================
-                            WeWash © 2024
+                            WeWash © 2025
 ================================================================================
