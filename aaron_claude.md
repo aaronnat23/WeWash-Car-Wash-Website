@@ -1,616 +1,377 @@
 # claude.md – Car Wash Subscription SaaS (Malaysia-first, PWA)
 
-## 0. High-Level Goal
+## 0. Goal
+Build a **car wash subscription + service marketplace** with:
+- A **B2C app** for drivers
+- A **B2B operator SaaS** for car wash merchants
+- A **PWA** that works like an app on mobile
+- Next.js + Typescript + Supabase
+- Tailwind + shadcn/ui for modern UI
 
-Build a **car wash subscription + marketplace platform** for Malaysia:
-
-- **B2C**: Drivers buy monthly/annual wash plans, discover nearby partner car washes, book slots, and track usage.
-- **B2B**: Car wash operators manage subscriptions, bookings, and capacity via a SaaS dashboard.
-- **Differentiator**: Modern, mobile-first PWA with **subscription-first**, **multi-location**, **analytics-driven** features + localisation for Malaysia (MYR, e-wallet flows later, Bahasa/English).
-
-Tech stack:
-
-- **Frontend / App**: Next.js (App Router) + TypeScript + TailwindCSS + shadcn/ui
-- **Backend**: Next.js Route Handlers (API routes) + Supabase (Postgres + Auth + Storage)
-- **Auth**: Supabase Auth (email/password, magic link, social later)
-- **PWA**: Installable PWA with offline capabilities for key screens
-- **Deployment**: Vercel (frontend + serverless API) + Supabase project
+This file gives Claude/Codex everything needed to start coding.
 
 ---
 
-## 1. Product Overview
+# 1. FEATURE LIST (FULL + CLEAR)
 
-### 1.1 Core Concept
+## 1.1 B2C Features (Drivers)
 
-Create a platform similar to modern global car-wash subscription apps, adapted to Malaysia:
+### **A. Subscription System**
+- Multiple subscription tiers (Basic, Standard, Premium)
+- Monthly or yearly billing
+- Unlimited washes *or* limited X washes per month
+- Multi-car family plans (1–4 cars)
+- Plans vary by:
+  - Vehicle type (sedan vs SUV)
+  - Service level (exterior only vs full wash)
+  - Whether mobile/on-site wash is included
+- Free trial (optional toggle)
 
-- **Subscription plans**:
-  - Monthly/annual subscriptions (e.g. Basic, Standard, Premium) for wash services.
-  - Support **unlimited** or **X washes/month** models.
-  - Vehicle-type aware (sedan vs SUV/MPV).
-  - Multi-car/family plans.
+### **B. Vehicle Management**
+- Add multiple vehicles
+- Save plate number, make/model, colour, type
+- Assign vehicles to subscription
+- Change primary vehicle anytime
 
-- **Marketplace**:
-  - Users can see a **map/list of partner car washes**.
-  - For each merchant: services, pricing, supported plans, ratings, opening hours.
-  - Optional **mobile wash** (on-site at condo/office) as a flag.
+### **C. Merchant Discovery**
+- List + Map view of nearby car washes
+- Filters:
+  - Distance (1km, 3km, 5km, 10km)
+  - “Open now”
+  - “Supports your plan”
+  - Exterior wash / Full wash / Vacuum / Detailing
+  - Mobile wash available
+- Merchant detail screen includes:
+  - Photos, ratings, services, prices
+  - Opening hours
+  - Accepted subscription plans
+  - Next available time slots
 
-- **Bookings & Check-ins**:
-  - Users can book a time slot (for fixed locations) OR request on-demand wash.
-  - At the wash location: QR code or PIN-based check-in to redeem a wash.
+### **D. Booking System**
+- Book time slot at chosen merchant
+- Choose service type (standard wash, interior, detailing, add-ons)
+- Choose vehicle
+- Choose location
+- For mobile wash: choose your address
+- Booking confirmation & reminders
+- Modify/cancel booking
 
-- **Operator SaaS**:
-  - Car wash owners log into a **business dashboard**:
-    - Manage locations, services, pricing.
-    - See active subscriptions and redemptions.
-    - Capacity planning and simple analytics.
+### **E. Check-in & Redemption**
+- App generates **dynamic QR / token**
+- Staff scans QR
+- Backup: 6-digit PIN code
+- Booking marked as “completed” once service is done
+- Subscription wash count updates instantly
 
-- **Admin Portal**:
-  - Internal admin to manage merchants, resolve issues, handle disputes/fraud, and see high-level metrics.
+### **F. Usage Tracking**
+- Track number of washes used this billing cycle
+- Usage vs limit (or “Unlimited washes used: X”)
+- Show total savings:
+  - “You saved RM 112 this month compared to pay-per-wash”
+- View all past washes (history)
 
----
+### **G. Ratings & Reviews**
+- Rate merchant from 1–5 stars
+- Optional comments
+- Show average rating on merchant page
 
-## 2. Feature Gaps to Exploit (vs existing players)
-
-### 2.1 From global models
-
-Global car-wash subscription players often provide:
-
-- Unlimited or high-frequency wash plans.
-- Strong app UX for registering vehicles and scanning QR at the wash.
-- Focus on **recurring revenue + loyalty**.
-
-**Gaps to exploit for Malaysia:**
-
-- **Full PWA experience** (installable, offline) vs many native-only apps.
-- Better **usage visibility**:
-  - Show money saved vs pay-per-wash.
-  - Show wash frequency, favourite locations, etc.
-
-### 2.2 From local Malaysian models
-
-Local offerings (membership clubs, aggregators, etc.) tend to:
-
-- Sell **annual membership packs** via simple apps or websites.
-- Offer multi-merchant access and discount plans.
-- Limited SaaS tooling for the operators (capacity management, analytics).
-
-**Gaps for us:**
-
-- **All-in-one SaaS + consumer app**:
-  - Fully featured operator dashboard (bookings, redemptions, staff roles).
-  - Robust B2C app with **real booking flows** (time slots, QR check-in), not just generic membership.
-
-- **True PWA**:
-  - Many local merchants don’t want to install complex POS. A browser-based PWA for staff works great on Android tablets/phones.
-
-- **Analytics & insights**:
-  - Show operators: peak hours, subscription usage, plan profitability.
-  - Show users: their car “care history” and savings.
-
-- **Localized payments**:
-  - Initially Stripe (or generic card) for coding simplicity.
-  - Later integrate MY-specific payment gateways / e-wallets (e.g. TnG, GrabPay).
+### **H. Profile / Settings**
+- Edit profile
+- Change password
+- Language switch (English/Bahasa later)
+- Manage payment methods
+- Cancel subscription (Stripe)
+- See subscription renewal date
 
 ---
 
-## 3. User Types & Roles
+## 1.2 B2B Features (Merchant Owners)
 
-1. **Driver / Customer**
-   - Sign up, verify email.
-   - Add vehicles.
-   - Browse merchants on map/list.
-   - Purchase subscription plans.
-   - Book wash slots / request on-demand wash.
-   - Check-in at merchant (QR/PIN).
-   - View wash history & savings.
+### **A. Merchant Dashboard**
+- Total washes today
+- Active bookings
+- Upcoming bookings list
+- Peak hour statistics
+- Subscription vs one-off ratio
 
-2. **Merchant Owner**
-   - Create and manage one or more wash locations.
-   - Define services, pricing, supported plans.
-   - Manage staff accounts.
-   - Approve/deny bookings.
-   - Redeem customer visits.
-   - See analytics (wash count, revenue, subscriptions).
+### **B. Locations Management**
+- Add multiple branches
+- Set GPS coordinates, images, description
+- Set opening hours
+- Enable/disable mobile wash service
+- Real-time “open / closed” toggle
 
-3. **Merchant Staff**
-   - Restricted access: mainly check-in customers (QR/PIN), see upcoming bookings, mark jobs as completed.
+### **C. Service Management**
+- Add services (wash, vacuum, polish, detailing)
+- Add-on pricing
+- Set duration for each service
+- Vehicle-type specific pricing
 
-4. **Platform Admin**
-   - Manage merchants and users.
-   - Approve merchant onboarding.
-   - Force-cancel subscriptions or bookings.
-   - View platform-wide metrics.
+### **D. Booking Management**
+- Accept or auto-accept bookings
+- View timeline of bookings
+- Mark booking:
+  - In-progress
+  - Completed
+  - No-show
+- Override or edit booking time slot
 
----
+### **E. Wash Redemption**
+- Staff portal:
+  - Scan customer QR
+  - Redeem wash
+  - Mark job as completed
 
-## 4. Tech Stack & Libraries
+### **F. Staff Accounts**
+- Owner can add staff with limited permissions
+- Staff roles:
+  - Manager
+  - Front desk
+  - Washer (only scan + complete)
 
-- **Framework**: Next.js (latest, App Router)
-- **Language**: TypeScript (strict mode)
-- **UI**:
-  - TailwindCSS for utility-first styling.
-  - **shadcn/ui** components for modern UI (e.g. Dialog, Sheet, Tabs, DataTable, Command, Calendar, Form).
-- **State & Data**:
-  - React Query / TanStack Query (for server state, caching Supabase queries).
-  - React Context or Zustand for simple client-side app state (e.g. selected vehicle, current location).
-- **Backend / Database**:
-  - Supabase Postgres for relational data.
-  - Supabase Auth for user management and role-based logic.
-  - Supabase Storage (optional) to store merchant images, car images, etc.
-- **Auth / RBAC**:
-  - Supabase Auth + RLS policies to separate:
-    - drivers (end users),
-    - merchant owners,
-    - merchant staff,
-    - platform admins.
-- **Payments**:
-  - Phase 1: Stripe subscription API (for easiest integration).
-  - Phase 2: integrate local payment gateways (abstract payment provider in code).
-- **PWA**:
-  - Use Next.js PWA plugin or manual service worker setup.
-  - Add manifest.json & icons for installability.
+### **G. Analytics**
+- Wash frequency charts (daily/weekly/monthly)
+- Subscription usage
+- Revenue estimation (subscription share + add-ons)
+- Customer repeat rate
+- Peak hour heatmap
+- Most popular services
+- Branch-wise comparison
 
 ---
 
-## 5. High-Level Architecture
+## 1.3 Admin Features
 
-### 5.1 Frontend – Next.js App Router structure
-
-Suggested route structure:
-
-- `/` – Landing page (marketing)
-- `/app` – Auth-gated driver app shell
-  - `/app/dashboard` – main user dashboard (active plan, next booking)
-  - `/app/merchants` – browse list + map
-  - `/app/merchants/[merchantId]` – merchant detail + services + booking
-  - `/app/subscriptions` – browse & purchase plans
-  - `/app/bookings` – list + detail
-  - `/app/vehicles` – manage vehicles
-  - `/app/profile` – settings, language, payment methods
-- `/merchant` – merchant portal shell (subdomain support later)
-  - `/merchant/dashboard`
-  - `/merchant/locations`
-  - `/merchant/bookings`
-  - `/merchant/customers`
-  - `/merchant/analytics`
-  - `/merchant/settings`
-- `/admin` – admin portal
-  - `/admin/merchants`
-  - `/admin/users`
-  - `/admin/plans`
-  - `/admin/reports`
-
-### 5.2 Backend – API Routes / Server Actions
-
-Use **Next.js Route Handlers** under `/api`:
-
-Examples (names only, no code):
-
-- `/api/auth/callback` – Supabase auth handling if needed.
-- `/api/merchants` – CRUD for merchant data (merchant-only + admin).
-- `/api/locations` – location/address operations.
-- `/api/plans` – fetch available plans, admin CRUD.
-- `/api/subscriptions` – create/cancel/list subscriptions (calls Stripe/local gateway).
-- `/api/bookings` – create/update/cancel bookings.
-- `/api/checkin` – verify QR/PIN, record wash redemption.
-- `/api/analytics` – aggregated metrics for dashboards.
-
-Use **server actions** for form submissions where possible to reduce boilerplate, but keep payment flows inside API routes.
+- Approve merchant onboarding
+- Suspend merchants or users
+- Manage global subscription plans
+- Global reporting dashboards:
+  - Total subscriptions
+  - Monthly Recurring Revenue (MRR)
+  - Churn rate
+  - Top merchants by volume
+- Fraud monitoring:
+  - Suspicious repeated redemptions
+  - Out-of-radius mobile wash activity
 
 ---
 
-## 6. Data Model (Supabase – High Level)
+# 2. FEATURE GAPS (MARKET OPPORTUNITY)
 
-Do **not** write SQL here. Just describe tables/fields so Claude/Codex can generate schema.
+### Gaps in Malaysia + how we exploit them:
 
-### 6.1 Core Tables
+#### **Gap 1 – No full SaaS + consumer app combo**
+Most competitors only offer membership cards or simple apps.
+**We offer:**  
+- Full operator dashboard + PWA driver app + bookings + QR redemption.
 
-1. **users**
-   - id (uuid, from Supabase auth)
-   - role (`driver`, `merchant_owner`, `merchant_staff`, `admin`)
-   - name
-   - email
-   - phone
-   - created_at, updated_at
+#### **Gap 2 – Weak mobile wash integration**
+Most do not support on-site condo/office washes well.
+**We offer:**  
+- Mobile wash mode with address input + scheduling.
 
-2. **merchants**
-   - id
-   - owner_id (FK to users)
-   - name
-   - description
-   - logo_url
-   - contact_phone
-   - default_currency (MYR)
-   - is_approved (bool)
-   - created_at, updated_at
+#### **Gap 3 – No real analytics**
+Most car wash shops operate blind.
+**We offer:**  
+- Usage analytics, heatmaps, revenue forecasting.
 
-3. **merchant_locations**
-   - id
-   - merchant_id
-   - name (e.g., “Branch – Subang Jaya”)
-   - address_line1, address_line2
-   - city, state, postcode, country
-   - latitude, longitude
-   - opening_hours (JSON)
-   - is_mobile_service (bool)
-   - is_active (bool)
+#### **Gap 4 – No unlimited wash subscription in modern UX**
+We bring the US-style unlimited-wash subscription with:
+- Instant activation
+- QR check-in
+- In-app usage tracking
 
-4. **services**
-   - id
-   - merchant_id
-   - name (e.g., “Exterior Wash”, “Interior Cleaning”)
-   - description
-   - base_price
-   - estimated_duration_minutes
-   - vehicle_type_applicable (enum or array)
-   - is_active (bool)
-
-5. **plans** (platform-wide subscription plans)
-   - id
-   - name (Basic, Standard, Premium, Family, etc.)
-   - description
-   - billing_period (`monthly`, `yearly`)
-   - price_myr
-   - max_washes_per_cycle (nullable for unlimited)
-   - max_vehicles (1 for single, >1 for family)
-   - includes_mobile_service (bool)
-   - is_public (bool)
-   - stripe_price_id (nullable, for Phase 1 payments)
-
-6. **plan_merchant_mappings**
-   - id
-   - plan_id
-   - merchant_id
-   - optional override (e.g. plan not valid at all merchants, or different revenue share)
-
-7. **vehicles**
-   - id
-   - user_id
-   - nickname (e.g., “Myvi – daily”)
-   - plate_number
-   - make
-   - model
-   - year
-   - vehicle_type (sedan, hatchback, SUV, MPV, pickup)
-   - color
-   - created_at, updated_at
-
-8. **subscriptions**
-   - id
-   - user_id
-   - plan_id
-   - billing_provider (`stripe`, `local_gateway`)
-   - billing_subscription_id (from provider)
-   - start_date
-   - current_period_start
-   - current_period_end
-   - status (`active`, `canceled`, `past_due`, `expired`)
-   - cancel_at_period_end (bool)
-   - metadata (JSON for extra information)
-
-9. **subscription_vehicles**
-   - id
-   - subscription_id
-   - vehicle_id
-
-10. **bookings**
-    - id
-    - user_id
-    - subscription_id (nullable – allow one-off non-subsidised booking)
-    - vehicle_id
-    - merchant_id
-    - location_id
-    - service_id (or array if multiple services)
-    - booking_type (`in_location`, `mobile`)
-    - scheduled_start, scheduled_end
-    - status (`pending`, `confirmed`, `in_progress`, `completed`, `cancelled`, `no_show`)
-    - total_price_myr (for non-sub or add-ons)
-    - notes
-
-11. **redemptions**
-    - id
-    - booking_id (nullable if walk-in)
-    - subscription_id
-    - vehicle_id
-    - merchant_id
-    - location_id
-    - redeemed_at
-    - redeemed_by_staff_id
-    - method (`qr`, `pin`, `manual_admin`)
-    - is_valid (bool) (for fraud resolution)
-
-12. **ratings_reviews**
-    - id
-    - user_id
-    - merchant_id
-    - booking_id
-    - rating (1–5)
-    - comment
-    - created_at
-
-13. **analytics_events** (optional for detailed tracking)
-    - id
-    - user_id (nullable)
-    - event_type (e.g. `booking_created`, `subscription_purchased`)
-    - payload (JSON)
-    - created_at
+#### **Gap 5 – No PWA-first local competitor**
+We implement:
+- Offline-capable
+- Installable on Android/iPhone
+- Mobile-optimised UI with shadcn
 
 ---
 
-## 7. Auth, Roles & Security
+# 3. TECH STACK
 
-- Use **Supabase Auth** for user authentication.
-- Use **RLS policies** to enforce:
-  - Drivers only see their own data (vehicles, subscriptions, bookings).
-  - Merchant owners see only their merchant and related bookings/subscriptions.
-  - Merchant staff only see bookings and redemptions for their assigned locations.
-  - Admin has elevated access (bypass RLS via service role in server-side API).
+### Frontend
+- **Next.js (App Router)**
+- **Typescript**
+- **Tailwind CSS**
+- **shadcn/ui** components
+- TanStack Query (data caching + remote state)
+- Map provider: Mapbox / Google Maps JS SDK
 
-Implementation notes:
+### Backend
+- Next.js Route Handlers (API)
+- Supabase:
+  - Postgres
+  - Auth (email/password)  
+  - Storage (merchant photos, car photos)
+  - RLS + row-level policies
 
-- Map Supabase user to `users` row with role on sign-up.
-- Provide two sign-up flows:
-  - **Driver sign-up** (default).
-  - **Merchant onboarding** (creates merchant request, flagged `is_approved = false` until admin approval).
-- Use middleware or layout logic to route `/app` vs `/merchant` vs `/admin` based on role.
+### Payments
+- **Stripe** subscription billing (Phase 1)
+- Later: TNG eWallet / GrabPay (abstracted payment layer)
 
----
+### PWA
+- manifest.json
+- service worker:
+  - Cache static assets
+  - Cache logged-in user data
+  - Offline fallback UI
 
-## 8. PWA Requirements
-
-Goals:
-
-- App should be installable on Android/iOS browsers and desktop.
-- Support **offline-first** for:
-  - Viewing current plan info.
-  - Viewing last bookings / history.
-  - For merchant staff: being able to see today’s booking list cached (read-only) if temporarily offline.
-
-Implementation guidelines:
-
-- Add **web app manifest**:
-  - name, short_name, icons for various sizes.
-  - display = `standalone`.
-  - theme_color and background_color.
-
-- Add **service worker**:
-  - Cache static assets (Next.js static files, fonts, icons).
-  - Cache selected API responses (e.g. `/api/me`, `/api/bookings?today`, `/api/plan`).
-  - Offline fallback screen when calling API fails.
-
-- Ensure core screens are **responsive** and touch-friendly:
-  - Use shadcn `Sheet`, `BottomSheet`, `Dialog` for mobile interactions.
-  - Use large tap targets for check-in buttons and QR scanning.
+### Deployment
+- Vercel (frontend + API)
+- Supabase Cloud (database + auth + storage)
 
 ---
 
-## 9. UI / UX Design Notes
+# 4. HIGH-LEVEL IMPLEMENTATION STEPS
 
-Use **shadcn/ui** components + Tailwind, aim for clean, modern, minimalistic UI.
-
-Key screens (B2C):
-
-1. **Landing page**
-   - Hero with headline: “Unlimited car washes for busy drivers in Malaysia.”
-   - Benefits tiles.
-   - CTA: “Get started” → sign-up.
-   - Explainer section: “How it works” (Choose plan → Add car → Book wash → Scan QR).
-
-2. **User dashboard**
-   - Card showing **active subscription**:
-     - Plan type, renewal date.
-     - Washes used vs remaining (or “unlimited”).
-     - Savings estimate this period.
-   - Quick actions:
-     - “Book a wash”
-     - “View nearby locations”
-   - Recent activity list.
-
-3. **Merchant list + map**
-   - Map (using a maps provider) + list.
-   - Filters:
-     - Distance radius.
-     - Services (exterior, interior, detailing).
-     - Mobile service available.
-     - Open now.
-   - Each merchant card:
-     - Name, rating, distance.
-     - Badge for “participates in your plan” or “plan not accepted”.
-
-4. **Merchant detail**
-   - Photos, description, rating.
-   - Services and add-ons list.
-   - Next available time slots.
-   - Buttons:
-     - “Book now”
-     - “Add to favourites”
-   - Show which subscription plans are accepted.
-
-5. **Booking flow**
-   - Stepper:
-     1. Choose vehicle.
-     2. Choose service(s).
-     3. Choose location/time.
-     4. Confirm & pay (only for non-sub or add-ons).
-   - Use shadcn `Stepper`/`Tabs` + `Form` components.
-
-6. **Check-in screen**
-   - Display dynamic QR code that encodes booking + user info (short-lived token).
-   - Option to display numeric pin code.
-   - Show booking status and location name.
-
-Merchant portal key screens:
-
-- **Merchant dashboard**
-  - Today’s bookings, current check-ins.
-  - Quick filter by location.
-  - KPI cards: washes this week, subscription vs one-off ratio, revenue.
-
-- **Bookings List**
-  - DataTable (shadcn) with sorting/filtering.
-  - Actions: mark as in progress, completed, no-show.
-
-- **Check-in screen**
-  - QR scanner component (camera permission).
-  - Fallback manual booking ID/PIN entry.
-
-- **Analytics**
-  - Basic charts (wash count by day/time, plan usage).
-  - Use simple chart lib or shadcn-compatible chart components.
+### Step 1 – Project Setup
+- Create Next.js app with Typescript
+- Install Tailwind + shadcn/ui
+- Install Supabase JS client
+- Add PWA plugin (or manual SW)
+- Configure environment variables for Supabase + Stripe
 
 ---
 
-## 10. Payments & Subscription Logic
+### Step 2 – Database Schema (Supabase)
+Implement all tables described in section:
+- users
+- merchants
+- merchant_locations
+- services
+- plans
+- vehicles
+- subscriptions
+- subscription_vehicles
+- bookings
+- redemptions
+- ratings_reviews
+- analytics_events
 
-Phase 1 (for implementation simplicity):
-
-- Use **Stripe** subscriptions:
-  - Plans table stores `stripe_price_id`.
-  - When user buys a plan:
-    - Create Stripe customer (if not exists).
-    - Create subscription based on price ID.
-    - Store mapping in `subscriptions` table.
-
-- Use Stripe webhooks via route:
-  - `/api/webhooks/stripe`
-  - Handle events:
-    - `customer.subscription.created`
-    - `customer.subscription.updated`
-    - `customer.subscription.deleted`
-    - `invoice.payment_failed`
-  - Update `subscriptions.status`, `current_period_start`, `current_period_end` accordingly.
-
-Future extension:
-
-- Build an abstract `PaymentProvider` interface so that local payment gateways can be added later.
-- The rest of the app should rely on internal subscription status, not direct Stripe calls.
+Use RLS to enforce:
+- Drivers only see their own vehicles/bookings
+- Merchants only see their own branches/services
+- Staff restricted by location_id
+- Admin via service key
 
 ---
 
-## 11. Booking & Check-In Logic
-
-### 11.1 Booking creation
-
-- Check that:
-  - User has an **active subscription** for this plan (if booking under subscription).
-  - Vehicle is attached to subscription (or warn if not).
-  - Plan is accepted by selected merchant/location.
-  - User hasn’t exceeded max washes in current cycle (if applicable).
-
-- For non-subscription bookings, calculate total price based on service(s) and vehicle type.
-
-- Save booking with `status = pending` then `confirmed` if merchant auto-accept is on. Otherwise, allow merchant manual acceptance via portal.
-
-### 11.2 Wash redemption & anti-fraud
-
-- Generate a **short-lived token** (e.g. signed JWT or ULID) associated with booking.
-- QR contains this token, merchant ID, and location ID.
-- When scanned:
-  - Backend verifies token, ensures booking belongs to this merchant/location, and status is confirmed.
-  - Check that:
-    - Not already redeemed.
-    - Within the scheduled time window (with grace period).
-  - Create `redemptions` row and update booking status to `in_progress` → `completed`.
-
-- Limit multiple redemptions:
-  - One redemption per booking.
-  - Optionally track number of washes per period per subscription.
+### Step 3 – Authentication & Role Handling
+- On sign-up:
+  - Save role to `users` table
+- Middleware or layout checks redirect:
+  - `/app/*` → drivers
+  - `/merchant/*` → merchant owners + staff
+  - `/admin/*` → admins
 
 ---
 
-## 12. Analytics & Reporting
+### Step 4 – User App (B2C)
 
-### 12.1 Merchant analytics
+1. Dashboard  
+2. Explore merchants (map/list)  
+3. Merchant detail  
+4. Subscription listing + purchase  
+5. Booking flow  
+6. Check-in (QR/PIN)  
+7. Wash history  
+8. Profile/settings  
 
-- Metrics:
-  - Number of washes per day/week/month.
-  - Distribution by plan vs one-off.
-  - Revenue estimation (subscription share vs one-off).
-  - Peak time slots.
-  - Top customers (by frequency).
-
-- Implementation:
-  - Use Supabase SQL views or materialized views for heavy queries.
-  - Expose via `/api/analytics/merchant` endpoints.
-
-### 12.2 Platform analytics (admin)
-
-- Metrics:
-  - Total active subscriptions.
-  - Churn rate.
-  - Monthly Recurring Revenue (MRR) (approximated from stripe).
-  - Merchant performance ranking.
+Each page should be responsive and PWA-first.
 
 ---
 
-## 13. Localisation & Settings
+### Step 5 – Merchant SaaS Portal (B2B)
 
-- Initial languages: English; structure app for easy **i18n**.
-- Later add Bahasa Malaysia translations.
-- Currency: MYR only at first; store numeric values and format on frontend.
-- Time zone: default to Asia/Kuala_Lumpur, but store UTC in DB.
+1. Dashboard  
+2. Booking manager  
+3. Redemption scanner  
+4. Locations manager  
+5. Services manager  
+6. Staff manager  
+7. Analytics dashboard  
 
----
-
-## 14. Phase Breakdown (for Coding)
-
-### Phase 1 – Core MVP
-
-- Auth & basic roles (driver vs merchant owner vs admin).
-- Core data models (users, merchants, locations, vehicles, plans, subscriptions, bookings).
-- Stripe integration for subscription purchase.
-- B2C:
-  - User dashboard.
-  - Vehicle management.
-  - Plan listing + purchase flow.
-  - Merchant list & detail (without complex filters).
-  - Simple booking and check-in (QR or PIN).
-- Merchant portal:
-  - Basic dashboard.
-  - View today’s bookings.
-  - Mark completed/no-show.
-
-### Phase 2 – Marketplace & SaaS Enhancements
-
-- Advanced filters & map view.
-- Vehicle type specific pricing.
-- Family plans (multiple vehicles).
-- Ratings & reviews.
-- Merchant analytics (charts).
-- Staff accounts for merchants.
-- Mobile wash/on-site support.
-
-### Phase 3 – Optimisation & Local Integrations
-
-- Full PWA offline caching and improved install UX.
-- Local payment gateway & e-wallet integrations.
-- Referral & loyalty programs.
-- In-app notifications & email notifications.
-- Admin tools for merchant onboarding, dispute resolution.
+Use shadcn DataTable, Cards, Tabs, Sheet, Dialog.
 
 ---
 
-## 15. Non-Functional Requirements
+### Step 6 – Admin Portal
 
-- **Performance**:
-  - Use SSR/ISR where appropriate for landing and public pages.
-  - Use client-side queries with caching for app pages.
-- **Security**:
-  - Strict RLS on Supabase.
-  - Do not expose Stripe secrets or admin keys to client.
-- **Scalability**:
-  - Design tables & indexes for typical workloads (bookings/queries).
-  - Keep heavy analytics in views or scheduled jobs.
+1. Merchant approvals  
+2. Plan management  
+3. Global analytics charts  
+4. Dispute resolution  
+5. System config pages  
 
 ---
 
-Use this document as the blueprint to generate:
+### Step 7 – Payment Integration (Stripe)
+- Create Stripe products from DB plans
+- Webhooks:
+  - subscription created
+  - subscription renewed
+  - subscription ended
+- Update DB subscription state automatically
 
-1. Supabase schema (SQL migrations).
-2. Next.js App Router structure and layouts.
-3. shadcn/ui component composition for key screens.
-4. Route Handlers for API endpoints and webhooks.
-5. PWA config (manifest, service worker).
+---
 
-Focus on **clean TypeScript**, modular structure, and DX so the project can grow into a full SaaS over time.
+### Step 8 – PWA Finalisation
+- Add icons in `/public`
+- Add manifest.json
+- Add service worker with:
+  - Stale-while-revalidate caching
+  - API fallback for offline
+  - Guided install prompt
+
+---
+
+### Step 9 – Testing & QA
+- Test for slow Malaysian internet (3G fallback)
+- Ensure correct MYR formatting
+- Check flows for:
+  - Mobile wash
+  - Unlimited plans
+  - QR offline caching
+  - Merchant check-in
+  - Stripe renewals
+
+---
+
+# 5. RELEASE PLAN (PHASES)
+
+### **Phase 1 – MVP**
+- User app (basic)
+- Subscription purchase
+- Booking + QR check-in
+- Merchant dashboard minimal
+- Only fixed-location washes
+
+### **Phase 2 – Operator SaaS**
+- Full merchant analytics
+- Staff accounts
+- Peak-hour capacity tools
+
+### **Phase 3 – Marketplace Expansion**
+- Mobile wash (on-site)
+- Family plans
+- Ratings & reviews
+- Referral & loyalty system
+
+### **Phase 4 – Malaysia Optimisation**
+- Bahasa support
+- E-wallet payment integrations
+- Push notifications
+- Heatmaps & richer analytics
+
+---
+
+# 6. NOTES FOR CLAUDE/CODEX
+- Follow Next.js App Router best practices
+- Use server components for DB queries when possible
+- Use TanStack Query for client-side reacting to changes
+- Use shadcn/ui for all UI primitives to ensure consistent design
+- Keep pages lean, offload heavy logic to API routes or server actions
+- Prepare supabase types using `supabase generate types`
+
