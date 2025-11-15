@@ -6,14 +6,28 @@ void main() {
   runApp(const CarRentalApp());
 }
 
-class CarRentalApp extends StatelessWidget {
+class CarRentalApp extends StatefulWidget {
   const CarRentalApp({Key? key}) : super(key: key);
+
+  @override
+  State<CarRentalApp> createState() => _CarRentalAppState();
+}
+
+class _CarRentalAppState extends State<CarRentalApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Car Rental Management',
       debugShowCheckedModeBanner: false,
+      themeMode: _themeMode,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         textTheme: GoogleFonts.poppinsTextTheme(),
@@ -22,14 +36,38 @@ class CarRentalApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         useMaterial3: true,
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       ),
-      home: const HomePage(),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2196F3),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      home: HomePage(onThemeToggle: toggleTheme, currentThemeMode: _themeMode),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  final VoidCallback onThemeToggle;
+  final ThemeMode currentThemeMode;
+
+  const HomePage({
+    Key? key,
+    required this.onThemeToggle,
+    required this.currentThemeMode,
+  }) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -38,17 +76,20 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    const CarsPage(),
-    const BookingsPage(),
-    const ProfilePage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      const DashboardPage(),
+      const CarsPage(),
+      const BookingsPage(),
+      ProfilePage(
+        onThemeToggle: widget.onThemeToggle,
+        isDarkMode: widget.currentThemeMode == ThemeMode.dark,
+      ),
+    ];
+
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
@@ -112,7 +153,7 @@ class DashboardPage extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
-              children: [
+              children: const [
                 _StatCard(
                   title: 'Total Cars',
                   value: '24',
@@ -183,7 +224,6 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -202,7 +242,9 @@ class _StatCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
                   ),
               textAlign: TextAlign.center,
             ),
@@ -228,17 +270,24 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade100,
-          child: const Icon(Icons.directions_car, color: Colors.blue),
+          backgroundColor: isDark ? Colors.blue.shade700 : Colors.blue.shade100,
+          child: Icon(
+            Icons.directions_car,
+            color: isDark ? Colors.blue.shade200 : Colors.blue,
+          ),
         ),
         title: Text(carName, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('Customer: $customer\n${DateFormat('MMM dd, yyyy').format(date)}'),
         trailing: Chip(
           label: Text(status),
-          backgroundColor: status == 'Active' ? Colors.green.shade100 : Colors.orange.shade100,
+          backgroundColor: status == 'Active'
+              ? (isDark ? Colors.green.shade700 : Colors.green.shade100)
+              : (isDark ? Colors.orange.shade700 : Colors.orange.shade100),
         ),
         isThreeLine: true,
       ),
@@ -246,42 +295,193 @@ class _BookingCard extends StatelessWidget {
   }
 }
 
-// Cars Page
-class CarsPage extends StatelessWidget {
+// Cars Page with Search
+class CarsPage extends StatefulWidget {
   const CarsPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final cars = [
-      Car(name: 'Tesla Model 3', type: 'Electric', price: 89, available: true),
-      Car(name: 'BMW X5', type: 'SUV', price: 120, available: true),
-      Car(name: 'Mercedes C-Class', type: 'Sedan', price: 95, available: false),
-      Car(name: 'Audi A4', type: 'Sedan', price: 85, available: true),
-      Car(name: 'Toyota Camry', type: 'Sedan', price: 65, available: true),
-      Car(name: 'Honda CR-V', type: 'SUV', price: 75, available: false),
-    ];
+  State<CarsPage> createState() => _CarsPageState();
+}
 
+class _CarsPageState extends State<CarsPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  final List<Car> _allCars = [
+    Car(name: 'Tesla Model 3', type: 'Electric', price: 89, available: true),
+    Car(name: 'BMW X5', type: 'SUV', price: 120, available: true),
+    Car(name: 'Mercedes C-Class', type: 'Sedan', price: 95, available: false),
+    Car(name: 'Audi A4', type: 'Sedan', price: 85, available: true),
+    Car(name: 'Toyota Camry', type: 'Sedan', price: 65, available: true),
+    Car(name: 'Honda CR-V', type: 'SUV', price: 75, available: false),
+    Car(name: 'Porsche 911', type: 'Sports', price: 250, available: true),
+    Car(name: 'Ford Mustang', type: 'Sports', price: 120, available: true),
+    Car(name: 'Chevrolet Tahoe', type: 'SUV', price: 110, available: true),
+    Car(name: 'Nissan Altima', type: 'Sedan', price: 55, available: false),
+  ];
+
+  List<Car> get _filteredCars {
+    if (_searchQuery.isEmpty) {
+      return _allCars;
+    }
+    return _allCars.where((car) {
+      final query = _searchQuery.toLowerCase();
+      return car.name.toLowerCase().contains(query) ||
+          car.type.toLowerCase().contains(query) ||
+          car.price.toString().contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Available Cars'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {},
+            onPressed: () {
+              // Show filter dialog
+              _showFilterDialog();
+            },
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: cars.length,
-        itemBuilder: (context, index) {
-          return CarCard(car: cars[index]);
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search cars by name, type, or price...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _filteredCars.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No cars found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredCars.length,
+                    itemBuilder: (context, index) {
+                      return CarCard(car: _filteredCars[index]);
+                    },
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
         icon: const Icon(Icons.add),
         label: const Text('Add Car'),
+      ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Cars'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Available Only'),
+              leading: const Icon(Icons.check_circle),
+              onTap: () {
+                // Implement filter
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('SUV'),
+              leading: const Icon(Icons.directions_car),
+              onTap: () {
+                setState(() {
+                  _searchQuery = 'SUV';
+                  _searchController.text = 'SUV';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Sedan'),
+              leading: const Icon(Icons.directions_car),
+              onTap: () {
+                setState(() {
+                  _searchQuery = 'Sedan';
+                  _searchController.text = 'Sedan';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('Electric'),
+              leading: const Icon(Icons.electric_car),
+              onTap: () {
+                setState(() {
+                  _searchQuery = 'Electric';
+                  _searchController.text = 'Electric';
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -308,6 +508,8 @@ class CarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -315,14 +517,14 @@ class CarCard extends StatelessWidget {
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Center(
               child: Icon(
                 Icons.directions_car,
                 size: 80,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[500] : Colors.grey[600],
               ),
             ),
           ),
@@ -334,16 +536,20 @@ class CarCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      car.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        car.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Chip(
                       label: Text(car.available ? 'Available' : 'Rented'),
-                      backgroundColor: car.available ? Colors.green.shade100 : Colors.red.shade100,
+                      backgroundColor: car.available
+                          ? (isDark ? Colors.green.shade700 : Colors.green.shade100)
+                          : (isDark ? Colors.red.shade700 : Colors.red.shade100),
                       padding: EdgeInsets.zero,
                     ),
                   ],
@@ -351,9 +557,18 @@ class CarCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.category, size: 16, color: Colors.grey[600]),
+                    Icon(
+                      Icons.category,
+                      size: 16,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                     const SizedBox(width: 4),
-                    Text(car.type, style: TextStyle(color: Colors.grey[600])),
+                    Text(
+                      car.type,
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -362,10 +577,10 @@ class CarCard extends StatelessWidget {
                   children: [
                     Text(
                       '\$${car.price}/day',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     FilledButton.icon(
@@ -384,9 +599,78 @@ class CarCard extends StatelessWidget {
   }
 }
 
-// Bookings Page
-class BookingsPage extends StatelessWidget {
+// Bookings Page with Search
+class BookingsPage extends StatefulWidget {
   const BookingsPage({Key? key}) : super(key: key);
+
+  @override
+  State<BookingsPage> createState() => _BookingsPageState();
+}
+
+class _BookingsPageState extends State<BookingsPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  final List<Booking> _allBookings = [
+    Booking(
+      carName: 'Tesla Model 3',
+      customer: 'John Doe',
+      startDate: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 3)),
+      status: 'Active',
+      totalAmount: 267,
+    ),
+    Booking(
+      carName: 'BMW X5',
+      customer: 'Jane Smith',
+      startDate: DateTime.now().add(const Duration(days: 1)),
+      endDate: DateTime.now().add(const Duration(days: 5)),
+      status: 'Upcoming',
+      totalAmount: 480,
+    ),
+    Booking(
+      carName: 'Mercedes C-Class',
+      customer: 'Bob Johnson',
+      startDate: DateTime.now().subtract(const Duration(days: 7)),
+      endDate: DateTime.now().subtract(const Duration(days: 2)),
+      status: 'Completed',
+      totalAmount: 475,
+    ),
+    Booking(
+      carName: 'Audi A4',
+      customer: 'Alice Williams',
+      startDate: DateTime.now().add(const Duration(days: 2)),
+      endDate: DateTime.now().add(const Duration(days: 6)),
+      status: 'Upcoming',
+      totalAmount: 340,
+    ),
+    Booking(
+      carName: 'Toyota Camry',
+      customer: 'Charlie Brown',
+      startDate: DateTime.now().subtract(const Duration(days: 14)),
+      endDate: DateTime.now().subtract(const Duration(days: 10)),
+      status: 'Completed',
+      totalAmount: 260,
+    ),
+  ];
+
+  List<Booking> get _filteredBookings {
+    if (_searchQuery.isEmpty) {
+      return _allBookings;
+    }
+    return _allBookings.where((booking) {
+      final query = _searchQuery.toLowerCase();
+      return booking.carName.toLowerCase().contains(query) ||
+          booking.customer.toLowerCase().contains(query) ||
+          booking.status.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,32 +678,67 @@ class BookingsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Bookings'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          BookingListItem(
-            carName: 'Tesla Model 3',
-            customer: 'John Doe',
-            startDate: DateTime.now(),
-            endDate: DateTime.now().add(const Duration(days: 3)),
-            status: 'Active',
-            totalAmount: 267,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search by car, customer, or status...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+              ),
+            ),
           ),
-          BookingListItem(
-            carName: 'BMW X5',
-            customer: 'Jane Smith',
-            startDate: DateTime.now().add(const Duration(days: 1)),
-            endDate: DateTime.now().add(const Duration(days: 5)),
-            status: 'Upcoming',
-            totalAmount: 480,
-          ),
-          BookingListItem(
-            carName: 'Mercedes C-Class',
-            customer: 'Bob Johnson',
-            startDate: DateTime.now().subtract(const Duration(days: 7)),
-            endDate: DateTime.now().subtract(const Duration(days: 2)),
-            status: 'Completed',
-            totalAmount: 475,
+          Expanded(
+            child: _filteredBookings.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No bookings found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredBookings.length,
+                    itemBuilder: (context, index) {
+                      return BookingListItem(booking: _filteredBookings[index]);
+                    },
+                  ),
           ),
         ],
       ),
@@ -427,7 +746,7 @@ class BookingsPage extends StatelessWidget {
   }
 }
 
-class BookingListItem extends StatelessWidget {
+class Booking {
   final String carName;
   final String customer;
   final DateTime startDate;
@@ -435,20 +754,30 @@ class BookingListItem extends StatelessWidget {
   final String status;
   final double totalAmount;
 
-  const BookingListItem({
-    Key? key,
+  Booking({
     required this.carName,
     required this.customer,
     required this.startDate,
     required this.endDate,
     required this.status,
     required this.totalAmount,
+  });
+}
+
+class BookingListItem extends StatelessWidget {
+  final Booking booking;
+
+  const BookingListItem({
+    Key? key,
+    required this.booking,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     Color statusColor;
-    switch (status) {
+    switch (booking.status) {
       case 'Active':
         statusColor = Colors.green;
         break;
@@ -469,17 +798,23 @@ class BookingListItem extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  carName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    booking.carName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Chip(
-                  label: Text(status),
-                  backgroundColor: statusColor.withOpacity(0.2),
-                  labelStyle: TextStyle(color: statusColor),
+                  label: Text(booking.status),
+                  backgroundColor: isDark
+                      ? statusColor.withOpacity(0.3)
+                      : statusColor.withOpacity(0.2),
+                  labelStyle: TextStyle(
+                    color: isDark ? statusColor.shade200 : statusColor.shade900,
+                  ),
                 ),
               ],
             ),
@@ -488,7 +823,7 @@ class BookingListItem extends StatelessWidget {
               children: [
                 const Icon(Icons.person, size: 16),
                 const SizedBox(width: 8),
-                Text(customer),
+                Text(booking.customer),
               ],
             ),
             const SizedBox(height: 8),
@@ -496,7 +831,9 @@ class BookingListItem extends StatelessWidget {
               children: [
                 const Icon(Icons.calendar_today, size: 16),
                 const SizedBox(width: 8),
-                Text('${DateFormat('MMM dd').format(startDate)} - ${DateFormat('MMM dd, yyyy').format(endDate)}'),
+                Text(
+                  '${DateFormat('MMM dd').format(booking.startDate)} - ${DateFormat('MMM dd, yyyy').format(booking.endDate)}',
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -504,11 +841,11 @@ class BookingListItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total: \$${totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  'Total: \$${booking.totalAmount.toStringAsFixed(2)}',
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 TextButton(
@@ -524,9 +861,16 @@ class BookingListItem extends StatelessWidget {
   }
 }
 
-// Profile Page
+// Profile Page with Theme Toggle
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  final VoidCallback onThemeToggle;
+  final bool isDarkMode;
+
+  const ProfilePage({
+    Key? key,
+    required this.onThemeToggle,
+    required this.isDarkMode,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -542,8 +886,12 @@ class ProfilePage extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.blue.shade100,
-                  child: const Icon(Icons.person, size: 50, color: Colors.blue),
+                  backgroundColor: isDarkMode ? Colors.blue.shade700 : Colors.blue.shade100,
+                  child: Icon(
+                    Icons.person,
+                    size: 50,
+                    color: isDarkMode ? Colors.blue.shade200 : Colors.blue,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -553,9 +901,20 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'admin@carrental.com',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
                 ),
               ],
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            title: Text(isDarkMode ? 'Light Mode' : 'Dark Mode'),
+            trailing: Switch(
+              value: isDarkMode,
+              onChanged: (_) => onThemeToggle(),
             ),
           ),
           const Divider(),
