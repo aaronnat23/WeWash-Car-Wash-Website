@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeWash - Car Wash Subscription Platform</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="The Ultimate Car Wash Subscription Platform for Malaysia">
+    <meta name="theme-color" content="#0066cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WeWash">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg">
+    <link rel="apple-touch-icon" href="/icon-192.svg">
     <style>
         * {
             margin: 0;
@@ -591,7 +605,71 @@
         </div>
         <div class="footer-bottom">
             <p>&copy; 2025 WeWash. All rights reserved. | Made with ❤️ for Malaysia</p>
+            <p style="margin-top: 1rem;"><a href="/wallpaper.html" style="color: #0066cc; text-decoration: none;">🎨 Check out Aaron's Special Wallpaper</a></p>
         </div>
     </footer>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show install button
+            const installBanner = document.createElement('div');
+            installBanner.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 50px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 1000;
+                display: flex;
+                gap: 1rem;
+                align-items: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            `;
+            installBanner.innerHTML = `
+                <span>📱 Install WeWash App</span>
+                <button id="installBtn" style="background: white; color: #0066cc; border: none; padding: 0.5rem 1rem; border-radius: 25px; cursor: pointer; font-weight: bold;">Install</button>
+                <button id="dismissBtn" style="background: transparent; color: white; border: 1px solid white; padding: 0.5rem 1rem; border-radius: 25px; cursor: pointer;">Not Now</button>
+            `;
+            document.body.appendChild(installBanner);
+
+            document.getElementById('installBtn').addEventListener('click', async () => {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.remove();
+            });
+
+            document.getElementById('dismissBtn').addEventListener('click', () => {
+                installBanner.remove();
+            });
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('WeWash PWA was installed');
+        });
+    </script>
 </body>
 </html>
