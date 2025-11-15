@@ -1,0 +1,58 @@
+Great! Now you need to configure Next.js for GitHub Pages. Here are the next steps:
+Step 1: Update next.config.js
+
+Go to your repository and find the next.config.js file (or next.config.mjs)
+Click on it to open
+Click the pencil icon (Edit this file)
+Replace the contents with:
+
+javascript/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  basePath: '/WeWash-Car-Wash-Website',
+  images: {
+    unoptimized: true,
+  },
+}
+
+module.exports = nextConfig
+
+Commit changes
+
+Step 2: Wait for GitHub Actions to Build
+
+Go to the "Actions" tab (top of your repo)
+You'll see the workflow running
+Wait for it to complete (takes 1-3 minutes)
+Look for a green checkmark ✅
+
+Step 3: Visit Your Live Site
+Once the Actions workflow is complete:
+
+Go back to Settings → Pages
+You'll see: "Your site is live at https://aaronnat23.github.io/WeWash-Car-Wash-Website/"
+Click "Visit site" to see your website!
+
+If the Build Fails:
+
+Check the Actions tab for error messages
+Make sure your package.json has all dependencies
+Verify your Next.js app builds locally with npm run build
+
+
+
+Extra information for oli
+
+Quick Checklist:
+Before you start, just make sure:
+
+✅ Your repository has a package.json file
+✅ Your package.json has a "build" script (Next.js adds this by default)
+✅ You have a Next.js app in the repo
+
+No Additional Setup Needed:
+
+❌ No API keys required
+❌ No secrets to configure
+❌ No permissions to set (already in the workflow file)
+❌ No additional installations
